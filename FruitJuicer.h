@@ -88,7 +88,7 @@ class FruitJuicer
 	void run_juicer()
 	{
 		size_t i(0);
-		while(i < 5)
+		while(i < 5 && run)
 		{		
 		//Demonstrate callback to Python from a separate C++ thread.
 		std::cout << "C++   ; Acquiring GIL...\n";
