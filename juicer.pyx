@@ -23,3 +23,5 @@ cdef class PyFruitJuicer:
         del self.ptr_cpp_juicer
     def squeezer(self, func):
         return self.ptr_cpp_juicer.squeeze(callbackChar, <void*>func)
+    def checkThreadStatus(self):
+        return self.ptr_cpp_juicer.isThreadFinished()

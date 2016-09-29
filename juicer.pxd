@@ -1,5 +1,6 @@
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+from libcpp cimport bool
 
 cdef extern from "FruitJuicer.h" namespace "juicer":
     ctypedef void (*pyVFunc)(vector[string], void *user_data)
@@ -7,3 +8,4 @@ cdef extern from "FruitJuicer.h" namespace "juicer":
     cdef cppclass FruitJuicer:
         FruitJuicer(pyVFunc, void*, vector[string]) except +
         size_t squeeze(pyCFunc user_func, void *user_data)
+        bool isThreadFinished()

@@ -61,6 +61,20 @@ class FruitJuicer
 		return count;
 	}
 
+	//Getter
+	bool isThreadFinished() const
+	{
+		auto status = future.wait_for(std::chrono::milliseconds(1));
+		if (status == std::future_status::ready)//execution complete
+		{
+				return true;
+		}
+		else
+		{ 
+				return false;
+		}   
+	}
+	
 	private:
 	std::vector<std::string> fruits;
 	std::function<void()> function;
