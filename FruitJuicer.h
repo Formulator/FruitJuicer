@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <atomic>
+#include <future>
 #include <thread>
 #include <iostream>
 #include "Python.h"
@@ -17,21 +18,34 @@ typedef void (*pyCharFunc)(char* name, void *user_data);
 class FruitJuicer
 {
  public:
- FruitJuicer(const pyVecFunc &user_func, void *user_data, const std::vector<std::string> &fruitsIn): pyVectorFunction(user_func), usrData(user_data), fruits(fruitsIn), count(0)
+ FruitJuicer(const pyVecFunc &user_func, void *user_data, const std::vector<std::string> &fruitsIn): pyVectorFunction(user_func), usrData(user_data), fruits(fruitsIn), count(0), run(true)
   {
 		// Make sure the GIL has been created since we need to acquire it in our callback to safely call into the python application.
 		 if (! PyEval_ThreadsInitialized())
 		{
 		PyEval_InitThreads();
 		}
-
-		//Demonstrate callback to Python from a separate C++ thread.
-		std::cout << "Launching thread...\n";
-		std::thread t(&FruitJuicer::run_juicer, this);
-		t.join();//wait for thread completion
+		
+		//Run member function as lambda function in a thread, crucially be able to monitor the thread status using the future
+    function = std::bind(&FruitJuicer::run_juicer, this);
+    future = std::async(std::launch::async, [this] {
+        function();
+        return true;
+    });		
   }
 
-	~FruitJuicer(){}
+	~FruitJuicer()
+	{		
+		//If future thread is still executing then terminate it by setting run = false
+		//Use wait_for() with zero milliseconds to check thread status.
+		auto status = future.wait_for(std::chrono::milliseconds(1));//needs to have a value > 0
+		if (status != std::future_status::ready)//execution not complete
+		 {
+     run = false;//terminate run_juicer
+     future.wait();//wait for execution to complete
+		 }
+		std::cout << "C++   ; FruitJuicer: Destructor Completed" << std::endl;		
+	}
 
 	//Callback Python function element-by-element, pass data as char*.
 	size_t squeeze(pyCharFunc pfc, void* ud)
@@ -49,6 +63,9 @@ class FruitJuicer
 
 	private:
 	std::vector<std::string> fruits;
+	std::function<void()> function;
+	std::future<bool> future;
+	std::atomic<bool> run;
 	pyVecFunc pyVectorFunction;
 	void* usrData;
 	std::atomic<size_t> count;
@@ -56,8 +73,9 @@ class FruitJuicer
 	//Runs in a thread and performs callback to Python passing std::vector<std::string> to be converted to a Python list.
 	void run_juicer()
 	{
-		//Macro saves Python thread state
-		Py_BEGIN_ALLOW_THREADS
+		size_t i(0);
+		while(i < 5)
+		{		
 		//Demonstrate callback to Python from a separate C++ thread.
 		std::cout << "C++   ; Acquiring GIL...\n";
 		//Acquire Python GIL
@@ -66,10 +84,10 @@ class FruitJuicer
 		pyVectorFunction(fruits, usrData);
 		//Release Python GIL
 		PyGILState_Release(gstate);
-		std::cout << "C++   ; Released GIL.\n";
-		//Macro restores Python thread state
-		Py_END_ALLOW_THREADS
+		std::cout << "C++   ; Released GIL.\n";		
 		count += fruits.size();//keep count
+		++i;
+		}
 	}
  };
 }
