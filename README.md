@@ -11,4 +11,8 @@ See http://docs.cython.org/en/latest/index.html for help getting started with Cy
 4. If all is well run the Python script squeeze.py; python squeeze.py
 5. Observe some output to the terminal window demonstrating what happened; some fruits get squeezed.
 
+![console_output](https://github.com/Formulator/FruitJuicer/blob/master/fruitjuicer.png)
+
 (Tested on Windows 10 using Anaconda installation of Python 3.5 and Visual Studio 2015 Community Edition compiler)
+
+
